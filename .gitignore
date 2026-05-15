@@ -6,9 +6,29 @@ db.sqlite3
 
 # Environment
 .env
+.env.example
 .venv/
 venv/
 env/
+#.local and variations of dotenv files
+.env.local
+.env.*
+
+# Private keys and certs
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Git and system credentials
+.git-credentials
+.pgpass
+.aws/
+
+# Python cache, test, tooling
+.pytest_cache/
+.mypy_cache/
+.cache/
 
 # Static & Media
 staticfiles/
