@@ -1,0 +1,162 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Analytics{% endblock %}
+
+{% block dashboard_content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Analytics</h1>
+    <p class="text-gray-500 mt-1">Detailed insights into your subscription spending.</p>
+</div>
+
+<!-- Quick Stats -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-2xl p-5 shadow-soft border border-gray-50 text-center">
+        <p class="text-xs text-gray-500 mb-1">Active</p>
+        <p class="text-2xl font-bold text-emerald-600">{{ total_active }}</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-soft border border-gray-50 text-center">
+        <p class="text-xs text-gray-500 mb-1">Cancelled</p>
+        <p class="text-2xl font-bold text-red-600">{{ total_cancelled }}</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-soft border border-gray-50 text-center">
+        <p class="text-xs text-gray-500 mb-1">Paused</p>
+        <p class="text-2xl font-bold text-amber-600">{{ total_paused }}</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-soft border border-gray-50 text-center">
+        <p class="text-xs text-gray-500 mb-1">Yearly Projection</p>
+        <p class="text-2xl font-bold text-gray-900">{{ request.user.currency_symbol }}{{ projection.yearly|floatformat:0 }}</p>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Monthly Spending Trend -->
+    <div class="bg-white rounded-2xl shadow-soft border border-gray-50 p-6">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-sm font-semibold text-gray-900">Monthly Spending Trend</h3>
+            <span class="text-xs text-gray-400">Last 12 months</span>
+        </div>
+        <div class="h-64">
+            <canvas id="monthlyTrendChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Category Breakdown -->
+    <div class="bg-white rounded-2xl shadow-soft border border-gray-50 p-6">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-sm font-semibold text-gray-900">Spending by Category</h3>
+        </div>
+        <div class="h-64 flex items-center justify-center">
+            <canvas id="categoryBreakdownChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Status Distribution -->
+<div class="bg-white rounded-2xl shadow-soft border border-gray-50 p-6 mb-8">
+    <h3 class="text-sm font-semibold text-gray-900 mb-5">Status Distribution</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% for status, count in status_data.items %}
+        <div class="flex items-center space-x-4 p-4 rounded-xl {% if status == 'active' %}bg-emerald-50{% elif status == 'paused' %}bg-amber-50{% elif status == 'cancelled' %}bg-red-50{% else %}bg-gray-50{% endif %}">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center {% if status == 'active' %}bg-emerald-100{% elif status == 'paused' %}bg-amber-100{% elif status == 'cancelled' %}bg-red-100{% else %}bg-gray-200{% endif %}">
+                <i data-lucide="{% if status == 'active' %}check-circle{% elif status == 'paused' %}pause-circle{% elif status == 'cancelled' %}x-circle{% else %}clock{% endif %}" 
+                   class="w-6 h-6 {% if status == 'active' %}text-emerald-600{% elif status == 'paused' %}text-amber-600{% elif status == 'cancelled' %}text-red-600{% else %}text-gray-600{% endif %}"></i>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-gray-900">{{ count }}</p>
+                <p class="text-sm text-gray-500">{{ status|title }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Top Expensive -->
+<div class="bg-white rounded-2xl shadow-soft border border-gray-50">
+    <div class="p-6 border-b border-gray-100">
+        <h3 class="text-sm font-semibold text-gray-900">Most Expensive Subscriptions</h3>
+    </div>
+    <div class="p-6">
+        <div class="space-y-4">
+            {% for sub in top_expensive %}
+            <div class="flex items-center justify-between p-4 rounded-xl bg-gray-50">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold"
+                         style="background-color: {% if sub.category %}{{ sub.category.color }}{% else %}#9CA3AF{% endif %}20;">
+                        {{ sub.name|first|upper }}
+                    </div>
+                    <p class="text-sm font-medium text-gray-900">{{ sub.name }}</p>
+                </div>
+                <p class="text-sm font-bold text-gray-900">{{ sub.currency_symbol }}{{ sub.price }}/{{ sub.get_billing_cycle_display|lower }}</p>
+            </div>
+            {% empty %}
+            <p class="text-sm text-gray-400 text-center py-4">No subscriptions found.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Monthly Trend Chart
+    const trendCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: {{ monthly_labels|safe|default:"['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']" }},
+            datasets: [{
+                label: 'Spending',
+                data: {{ monthly_values|safe|default:"[1200,1500,1800,1400,2000,2500,2200,1900,2100,2300,2000,2500]" }},
+                borderColor: '#3B82F6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointBackgroundColor: '#3B82F6',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointHoverRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#9CA3AF' } },
+                y: { grid: { color: '#F3F4F6' }, ticks: { font: { size: 11 }, color: '#9CA3AF', callback: v => '{{ request.user.currency_symbol }}' + v } }
+            }
+        }
+    });
+    
+    // Category Breakdown Chart
+    const catCtx = document.getElementById('categoryBreakdownChart').getContext('2d');
+    new Chart(catCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ category_labels|safe|default:"['Entertainment','Productivity','Cloud','Others']" }},
+            datasets: [{
+                data: {{ category_values|safe|default:"[45,28,15,12]" }},
+                backgroundColor: {{ category_colors|safe|default:"['#3B82F6','#10B981','#F59E0B','#9CA3AF']" }},
+                borderWidth: 0,
+                hoverOffset: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { padding: 20, font: { size: 12 }, color: '#6B7280', usePointStyle: true, pointStyleWidth: 10 }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

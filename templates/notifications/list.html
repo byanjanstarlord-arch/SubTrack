@@ -1,0 +1,70 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block dashboard_content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Notifications</h1>
+        <p class="text-gray-500 mt-1">Stay updated on your subscriptions.</p>
+    </div>
+    {% if unread_count > 0 %}
+    <a href="{% url 'notifications:mark_all_read' %}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+        <i data-lucide="check-double" class="w-4 h-4 mr-1.5"></i>
+        Mark all read
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-2xl shadow-soft border border-gray-50 p-4 mb-6">
+    <div class="flex items-center space-x-2 overflow-x-auto">
+        <a href="?type=all" class="px-4 py-2 text-sm font-medium {% if type_filter == 'all' %}bg-primary-900 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} rounded-xl transition-colors whitespace-nowrap">All</a>
+        <a href="?type=renewal_reminder" class="px-4 py-2 text-sm font-medium {% if type_filter == 'renewal_reminder' %}bg-primary-900 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} rounded-xl transition-colors whitespace-nowrap">Renewals</a>
+        <a href="?type=trial_expiring" class="px-4 py-2 text-sm font-medium {% if type_filter == 'trial_expiring' %}bg-primary-900 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} rounded-xl transition-colors whitespace-nowrap">Trials</a>
+        <a href="?type=payment_detected" class="px-4 py-2 text-sm font-medium {% if type_filter == 'payment_detected' %}bg-primary-900 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} rounded-xl transition-colors whitespace-nowrap">Payments</a>
+        <a href="?type=scan_complete" class="px-4 py-2 text-sm font-medium {% if type_filter == 'scan_complete' %}bg-primary-900 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} rounded-xl transition-colors whitespace-nowrap">Scans</a>
+    </div>
+</div>
+
+<!-- Notifications List -->
+<div class="bg-white rounded-2xl shadow-soft border border-gray-50">
+    {% if notifications %}
+    <div class="divide-y divide-gray-50">
+        {% for notification in notifications %}
+        <div class="p-5 flex items-start space-x-4 hover:bg-gray-50/50 transition-colors {% if not notification.is_read %}bg-blue-50/30{% endif %}">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 {% if notification.type == 'renewal_reminder' %}bg-amber-100{% elif notification.type == 'trial_expiring' %}bg-blue-100{% elif notification.type == 'payment_detected' %}bg-emerald-100{% elif notification.type == 'scan_complete' %}bg-purple-100{% else %}bg-gray-100{% endif %}">
+                <i data-lucide="{% if notification.type == 'renewal_reminder' %}bell{% elif notification.type == 'trial_expiring' %}clock{% elif notification.type == 'payment_detected' %}credit-card{% elif notification.type == 'scan_complete' %}scan{% else %}info{% endif %}" 
+                   class="w-5 h-5 {% if notification.type == 'renewal_reminder' %}text-amber-600{% elif notification.type == 'trial_expiring' %}text-blue-600{% elif notification.type == 'payment_detected' %}text-emerald-600{% elif notification.type == 'scan_complete' %}text-purple-600{% else %}text-gray-600{% endif %}"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">{{ notification.title }}</p>
+                        <p class="text-sm text-gray-500 mt-0.5">{{ notification.message }}</p>
+                        <p class="text-xs text-gray-400 mt-1.5">{{ notification.created_at|timesince }} ago</p>
+                    </div>
+                    <div class="flex items-center space-x-2 ml-4 flex-shrink-0">
+                        {% if not notification.is_read %}
+                        <a href="{% url 'notifications:mark_read' notification.pk %}" class="w-2.5 h-2.5 bg-blue-500 rounded-full hover:scale-125 transition-transform" title="Mark as read"></a>
+                        {% endif %}
+                        <a href="{% url 'notifications:delete' notification.pk %}" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16">
+        <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="bell" class="w-8 h-8 text-gray-400"></i>
+        </div>
+        <p class="text-sm font-medium text-gray-900 mb-1">No notifications</p>
+        <p class="text-sm text-gray-400">You're all caught up!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Free Trials{% endblock %}
+
+{% block dashboard_content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Free Trial Tracking</h1>
+    <p class="text-gray-500 mt-1">Monitor your active trials and never get converted unexpectedly.</p>
+</div>
+
+<!-- Active Trials -->
+<div class="bg-white rounded-2xl shadow-soft border border-gray-50 mb-6">
+    <div class="p-6 border-b border-gray-100">
+        <h2 class="text-lg font-semibold text-gray-900">Active Trials</h2>
+    </div>
+    <div class="p-6">
+        {% if active_trials %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {% for trial in active_trials %}
+            <div class="border border-gray-100 rounded-2xl p-5 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold"
+                             style="background-color: {% if trial.category %}{{ trial.category.color }}{% else %}#9CA3AF{% endif %}20;">
+                            {{ trial.name|first|upper }}
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">{{ trial.name }}</p>
+                            <p class="text-xs text-blue-600 font-medium">Trial ends {{ trial.trial_end_date|date:"M d" }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    {% with days_left=trial.days_until_renewal %}
+                    <div class="w-full bg-gray-100 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full transition-all" style="width: {% if days_left > 14 %}100{% elif days_left > 7 %}50{% else %}20{% endif %}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">{{ days_left }} days remaining</p>
+                    {% endwith %}
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a href="{% url 'subscriptions:edit' trial.pk %}" class="flex-1 text-center py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Edit</a>
+                    <a href="{% url 'subscriptions:cancel' trial.pk %}" class="flex-1 text-center py-2 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">Cancel</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="clock" class="w-8 h-8 text-gray-400"></i>
+            </div>
+            <p class="text-sm font-medium text-gray-900 mb-1">No active trials</p>
+            <p class="text-sm text-gray-400">You're not tracking any free trials right now.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Expired Trials -->
+{% if expired_trials %}
+<div class="bg-white rounded-2xl shadow-soft border border-gray-50">
+    <div class="p-6 border-b border-gray-100">
+        <h2 class="text-lg font-semibold text-gray-900">Expired Trials</h2>
+    </div>
+    <div class="p-6">
+        <div class="space-y-3">
+            {% for trial in expired_trials %}
+            <div class="flex items-center justify-between p-4 rounded-xl bg-gray-50">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold bg-gray-200 text-gray-500">
+                        {{ trial.name|first|upper }}
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-700">{{ trial.name }}</p>
+                        <p class="text-xs text-gray-400">Trial expired {{ trial.trial_end_date|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+                <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-red-50 text-red-600 border border-red-200">Expired</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

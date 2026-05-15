@@ -1,0 +1,142 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Email Detection{% endblock %}
+
+{% block dashboard_content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Gmail Subscription Detection</h1>
+    <p class="text-gray-500 mt-1">Automatically find subscriptions from your Gmail inbox.</p>
+</div>
+
+<!-- Gmail Connected Status -->
+<div class="bg-white rounded-2xl shadow-soft border border-gray-50 p-6 mb-8">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-emerald-600" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M20 18h-2V9.25L12 13 6 9.25V18H4V6h1.2l6.8 4.25L18.8 6H20v12z"/>
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-sm font-semibold text-gray-900">Gmail Connected</h3>
+                <p class="text-xs text-gray-500">{{ request.user.email }}</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'gmail_detection:disconnect' %}" class="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-colors">
+                Disconnect
+            </a>
+            <a href="{% url 'gmail_detection:scan' %}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-900 rounded-xl hover:bg-primary-800 transition-colors">
+                <i data-lucide="scan" class="w-4 h-4 mr-1.5"></i>
+                Scan Emails
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white rounded-2xl p-5 shadow-soft border border-gray-50 text-center">
+        <p class="text-3xl font-bold text-gray-900">{{ total_found }}</p>
+        <p class="text-xs text-gray-500 mt-1">Total Detected</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-soft border border-gray-50 text-center">
+        <p class="text-3xl font-bold text-amber-600">{{ pending_count }}</p>
+        <p class="text-xs text-gray-500 mt-1">Pending Review</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-soft border border-gray-50 text-center">
+        <p class="text-3xl font-bold text-emerald-600">{{ confirmed_count }}</p>
+        <p class="text-xs text-gray-500 mt-1">Confirmed</p>
+    </div>
+</div>
+
+<!-- Recent Detections -->
+<div class="bg-white rounded-2xl shadow-soft border border-gray-50 mb-8">
+    <div class="p-6 border-b border-gray-100">
+        <h2 class="text-lg font-semibold text-gray-900">Recent Detections</h2>
+    </div>
+    <div class="p-6">
+        {% if recent_detections %}
+        <div class="space-y-4">
+            {% for detection in recent_detections %}
+            <div class="flex items-center justify-between p-4 rounded-xl bg-gray-50">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold bg-gray-200 text-gray-700">
+                        {{ detection.detected_service|first|upper }}
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900">{{ detection.detected_service }}</p>
+                        <p class="text-xs text-gray-500">
+                            {% if detection.detected_amount %}
+                            {{ request.user.currency_symbol }}{{ detection.detected_amount }}/{{ detection.detected_billing_cycle|default:"month" }}
+                            {% endif %}
+                            <span class="ml-2">Confidence: {{ detection.confidence_score|floatformat:0 }}%</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    {% if detection.status == 'pending' %}
+                    <a href="{% url 'gmail_detection:confirm' detection.pk %}" class="px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors">
+                        Confirm
+                    </a>
+                    <a href="{% url 'gmail_detection:reject' detection.pk %}" class="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                        Reject
+                    </a>
+                    {% elif detection.status == 'confirmed' %}
+                    <span class="px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-lg border border-emerald-200">Confirmed</span>
+                    {% elif detection.status == 'rejected' %}
+                    <span class="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 rounded-lg border border-red-200">Rejected</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="mail" class="w-8 h-8 text-gray-400"></i>
+            </div>
+            <p class="text-sm font-medium text-gray-900 mb-1">No detections yet</p>
+            <p class="text-sm text-gray-400 mb-4">Run a scan to detect subscriptions from your Gmail inbox.</p>
+            <a href="{% url 'gmail_detection:scan' %}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-900 rounded-xl hover:bg-primary-800 transition-colors">
+                <i data-lucide="scan" class="w-4 h-4 mr-1.5"></i>
+                Scan Emails
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Scan History -->
+{% if scan_sessions %}
+<div class="bg-white rounded-2xl shadow-soft border border-gray-50">
+    <div class="p-6 border-b border-gray-100">
+        <h2 class="text-lg font-semibold text-gray-900">Scan History</h2>
+    </div>
+    <div class="p-6">
+        <div class="space-y-3">
+            {% for session in scan_sessions %}
+            <div class="flex items-center justify-between p-4 rounded-xl bg-gray-50">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center {% if session.status == 'completed' %}bg-emerald-100 text-emerald-600{% elif session.status == 'failed' %}bg-red-100 text-red-600{% else %}bg-blue-100 text-blue-600{% endif %}">
+                        <i data-lucide="{% if session.status == 'completed' %}check{% elif session.status == 'failed' %}alert-triangle{% else %}loader{% endif %}" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Scan #{{ session.id }}</p>
+                        <p class="text-xs text-gray-500">{{ session.started_at|date:"M d, Y H:i" }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4 text-sm text-gray-500">
+                    <span>{{ session.emails_scanned }} emails</span>
+                    <span>{{ session.subscriptions_found }} found</span>
+                    <span class="px-2.5 py-1 text-xs font-medium rounded-full {% if session.status == 'completed' %}bg-emerald-50 text-emerald-700{% elif session.status == 'failed' %}bg-red-50 text-red-700{% else %}bg-blue-50 text-blue-700{% endif %}">
+                        {{ session.get_status_display|default:session.status|title }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

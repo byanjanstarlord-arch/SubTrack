@@ -1,0 +1,57 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Connect Gmail{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-2xl mx-auto mt-12">
+    <div class="bg-white rounded-2xl shadow-soft border border-gray-50 p-8 text-center">
+        <div class="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <svg class="w-10 h-10 text-blue-600" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M20 18h-2V9.25L12 13 6 9.25V18H4V6h1.2l6.8 4.25L18.8 6H20v12z"/>
+            </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-3">Connect Your Gmail</h1>
+        <p class="text-gray-500 mb-2">Allow SubTrack to scan your Gmail inbox for subscription receipts, invoices, and payment confirmations.</p>
+        <p class="text-sm text-gray-400 mb-8">We only read emails related to subscriptions and billing. Your data is never shared.</p>
+        
+        <div class="space-y-4 mb-8">
+            <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl text-left">
+                <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="check" class="w-4 h-4 text-emerald-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-900">Auto-detect subscriptions</p>
+                    <p class="text-xs text-gray-500">Find subscriptions you forgot about</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl text-left">
+                <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="check" class="w-4 h-4 text-emerald-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-900">Extract billing details</p>
+                    <p class="text-xs text-gray-500">Prices, renewal dates, and billing cycles</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl text-left">
+                <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="check" class="w-4 h-4 text-emerald-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-900">Secure & private</p>
+                    <p class="text-xs text-gray-500">Read-only access, data stays encrypted</p>
+                </div>
+            </div>
+        </div>
+        
+        <a href="{% url 'accounts:google_auth' %}" class="inline-flex items-center justify-center px-8 py-3.5 bg-primary-900 text-white font-semibold rounded-xl hover:bg-primary-800 transition-all shadow-soft hover:shadow-card-hover">
+            <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M20 18h-2V9.25L12 13 6 9.25V18H4V6h1.2l6.8 4.25L18.8 6H20v12z"/>
+            </svg>
+            Connect Gmail Account
+        </a>
+        
+        <p class="text-xs text-gray-400 mt-6">You can disconnect Gmail at any time from your settings.</p>
+    </div>
+</div>
+{% endblock %}

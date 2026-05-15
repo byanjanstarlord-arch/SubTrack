@@ -1,0 +1,99 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Reports{% endblock %}
+
+{% block dashboard_content %}
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Reports</h1>
+        <p class="text-gray-500 mt-1">Export and download your subscription data.</p>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white rounded-2xl p-6 shadow-soft border border-gray-50 text-center">
+        <p class="text-xs text-gray-500 mb-1">Total Subscriptions</p>
+        <p class="text-3xl font-bold text-gray-900">{{ total_subscriptions }}</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-soft border border-gray-50 text-center">
+        <p class="text-xs text-gray-500 mb-1">Monthly Spend</p>
+        <p class="text-3xl font-bold text-gray-900">{{ request.user.currency_symbol }}{{ monthly_spend|floatformat:0 }}</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-soft border border-gray-50 text-center">
+        <p class="text-xs text-gray-500 mb-1">Yearly Spend</p>
+        <p class="text-3xl font-bold text-gray-900">{{ request.user.currency_symbol }}{{ yearly_spend|floatformat:0 }}</p>
+    </div>
+</div>
+
+<!-- Export Options -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- CSV Export -->
+    <div class="bg-white rounded-2xl shadow-soft border border-gray-50 p-8 card-hover">
+        <div class="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center mb-5">
+            <i data-lucide="file-spreadsheet" class="w-7 h-7 text-emerald-600"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Export as CSV</h3>
+        <p class="text-sm text-gray-500 mb-6 leading-relaxed">Download all your subscription data in CSV format. Perfect for spreadsheet analysis and record keeping.</p>
+        <a href="{% url 'reports:export_csv' %}" class="inline-flex items-center px-6 py-3 text-sm font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors shadow-soft">
+            <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+            Download CSV
+        </a>
+    </div>
+    
+    <!-- PDF Export -->
+    <div class="bg-white rounded-2xl shadow-soft border border-gray-50 p-8 card-hover">
+        <div class="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mb-5">
+            <i data-lucide="file-text" class="w-7 h-7 text-red-600"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Export as PDF</h3>
+        <p class="text-sm text-gray-500 mb-6 leading-relaxed">Generate a professional PDF report with all your subscription details, spending breakdown, and analytics.</p>
+        <a href="{% url 'reports:export_pdf' %}" class="inline-flex items-center px-6 py-3 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors shadow-soft">
+            <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+            Download PDF
+        </a>
+    </div>
+</div>
+
+<!-- Monthly Summary -->
+<div class="bg-white rounded-2xl shadow-soft border border-gray-50 mt-8">
+    <div class="p-6 border-b border-gray-100">
+        <h3 class="text-sm font-semibold text-gray-900">Monthly Summary</h3>
+    </div>
+    <div class="p-6">
+        <div class="h-48">
+            <canvas id="reportChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('reportChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ monthly_labels|safe|default:"['Jan','Feb','Mar','Apr','May','Jun']" }},
+            datasets: [{
+                label: 'Monthly Spending',
+                data: {{ monthly_values|safe|default:"[1200,1500,1800,1400,2000,2500]" }},
+                backgroundColor: '#3B82F6',
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#9CA3AF' } },
+                y: { grid: { color: '#F3F4F6' }, ticks: { font: { size: 11 }, color: '#9CA3AF', callback: v => '{{ request.user.currency_symbol }}' + v } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
